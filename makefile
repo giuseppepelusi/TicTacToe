@@ -2,7 +2,7 @@ CC = g++
 SOURCE = tris.cpp
 EXEC = tris
 
-all: clear compile run
+all: clear compile
 
 compile:
 	@$(CC) $(SOURCE) -o $(EXEC)
@@ -15,3 +15,5 @@ clear:
 run:
 	@echo "Executed \"$(EXEC)\""
 	@./$(EXEC)
+
+.PHONY: all compile clear run

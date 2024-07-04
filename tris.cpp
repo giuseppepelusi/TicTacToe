@@ -2,6 +2,10 @@
 
 using std::cout, std::cin, std::string, std::stoi;
 
+#define RED_BOLD "\033[31;1m"
+#define BLUE_BOLD "\033[34;1m"
+#define RESET "\033[0m"
+
 const int M = 3;
 const int N = 3;
 const int TOTAL_CELLS = M * N;
@@ -205,7 +209,13 @@ void printMatrix()
         cout << "     ";
         for (int j = 0; j < N; j++)
         {
-            cout << " " << matrix[i][j] << " ";
+            if (matrix[i][j] == 'X')
+                cout << RED_BOLD << " " << matrix[i][j] << " " << RESET;
+            else if (matrix[i][j] == 'O')
+                cout << BLUE_BOLD << " " << matrix[i][j] << " " << RESET;
+            else
+                cout << " " << matrix[i][j] << " ";
+
             if (j < N - 1)
                 cout << "|";
         }

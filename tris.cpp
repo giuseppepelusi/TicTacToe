@@ -1,6 +1,6 @@
 #include <iostream>
 
-using std::cout, std::cin, std::string;
+using std::cout, std::cin, std::string, std::stoi;
 
 const int M = 3;
 const int N = 3;
@@ -19,6 +19,7 @@ struct Player
 Player p1{.Move = 'X'};
 Player p2{.Move = 'O'};
 
+int readInt();
 bool startGame(char dis);
 void namesPlayers();
 void printMatrix();
@@ -50,7 +51,7 @@ int main()
         cout << "2. Player vs Computer\n";
         cout << "3. Exit\n";
         cout << "--> ";
-        cin >> option;
+        option = readInt();
 
         if (option == 3)
         {
@@ -87,6 +88,24 @@ int main()
     return 0;
 }
 
+int readInt()
+{
+    string input;
+    int number;
+
+    cin >> input;
+
+    try
+    {
+        number = stoi(input);
+        return number;
+    }
+    catch (...)
+    {
+        return 0;
+    }
+
+}
 
 bool startGame(char dis)
 {
@@ -156,7 +175,7 @@ void namesPlayers()
     
     if (p2.Name == COMPUTER_NAME)
     {
-        cout << "---------TRIS---------\n\n";
+        cout << "---------TRIS---------\n";
         cout << "Insert your name:\n";
         cout << "--> ";
         cin >> p1.Name;
@@ -164,7 +183,7 @@ void namesPlayers()
 
     else
     {
-        cout << "---------TRIS---------\n\n";
+        cout << "---------TRIS---------\n";
         cout << "Insert FIRST player's name:\n";
         cout << "--> ";
         cin >> p1.Name;
@@ -208,7 +227,7 @@ void playerMove(Player player)
 
     cout << player.Name << "'s turn\n";
     cout << "Choose where to place your \"" << player.Move << "\": ";
-    cin >> pos;
+    pos = readInt();
 
     placeMarker(player, pos);
 }
@@ -227,9 +246,10 @@ void placeMarker(Player & player, int pos)
     {
         printMatrix();
         
-        if (pos < 1 || pos > 9)
+        if (pos == 0)
+            cout << "Invalid input.\nChoose a position between 1 and 9.\n";
+        else if (pos < 1 || pos > 9)
             cout << "Not a valid position.\nChoose a position between 1 and 9.\n";
-
         else
             cout << "Position alredy occupied.\nChoose another position.\n";
 

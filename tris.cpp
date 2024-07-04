@@ -19,8 +19,7 @@ struct Player
 Player p1{.Move = 'X'};
 Player p2{.Move = 'O'};
 
-void startGame(char dis);
-void playervsComputer();
+bool startGame(char dis);
 void namesPlayers();
 void printMatrix();
 void playerMove(Player player);
@@ -30,7 +29,7 @@ bool checkWin(Player & player);
 bool checkTie(int moves);
 void resetMatrix();
 void showWins();
-void playAgain(char dis);
+bool playAgain();
 
 int main()
 {
@@ -41,7 +40,7 @@ int main()
     p2.Win = 0;
     matches = 0;
 
-    do
+    while (true)
     {   
         system("clear");
         
@@ -53,50 +52,46 @@ int main()
         cout << "--> ";
         cin >> option;
 
+        if (option == 3)
+        {
+            cout << "Exiting program...\n";
+            break;
+        }
+        
         switch (option)
         {
             case 1:
-            {
                 dis = 'p';
                 p2.Name = "";
                 resetMatrix();
                 namesPlayers();
-                startGame(dis);
-                break; 
-            }
+                break;
 
             case 2:
-            {
                 dis = 'c';
                 p2.Name = COMPUTER_NAME;
                 resetMatrix();
                 namesPlayers();
-                startGame(dis);
                 break;
-            }
-
-            case 3:
-            {
-                cout << "Exiting program...\n";
-                exit(0);
-            }
 
             default:
-            {
                 continue;
-            }
         }
-        break;
+
+        while (startGame(dis))
+        {
+            resetMatrix();
+        }
     }
-    while (true);
 
     return 0;
 }
 
-void startGame(char dis)
+
+bool startGame(char dis)
 {
     int moves = 0;
-    
+
     do
     {
         printMatrix();
@@ -152,7 +147,7 @@ void startGame(char dis)
 
     matches++;
 
-    playAgain(dis);
+    return playAgain();
 }
 
 void namesPlayers()
@@ -358,7 +353,7 @@ void showWins()
     cout << "----------------------\n";
 }
 
-void playAgain(char dis)
+bool playAgain()
 {
     char option;
     
@@ -367,30 +362,20 @@ void playAgain(char dis)
         cout << "Do you want to play again? (y/n): ";
         cin >> option;
     
-        switch (option)
+        if (option == 'y' || option == 'Y')
         {
-            case 'y':
-            case 'Y':
-            {
-                resetMatrix();
-                startGame(dis);
-                break;
-            }
-
-            case 'n':
-            case 'N':
-            {
-                main();
-                break;
-            }
-            
-            default:
-            {
-                printMatrix();
-                showWins();
-                cout << "Not a valid option.\n";
-            }
+            return true;
+        }
+        else if (option == 'n' || option == 'N')
+        {
+            return false;
+        }
+        else
+        {
+            printMatrix();
+            showWins();
+            cout << "Not a valid option.\n";
         }
     }
-    while (option != 'n' && option != 'N');
+    while (true);
 }

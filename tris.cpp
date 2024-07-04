@@ -41,12 +41,12 @@ int main()
     int menuChoice;
     char gameMode;
 
-    p1.win = 0;
-    p2.win = 0;
-    matches = 0;
-
     while (true)
     {   
+        p1.win = 0;
+        p2.win = 0;
+        matches = 0;
+
         system("clear");
         
         cout << "---------TRIS---------\n";

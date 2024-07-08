@@ -5,6 +5,9 @@ using std::cout, std::cin, std::string, std::stoi;
 #define RED_BOLD "\033[31;1m"
 #define BLUE_BOLD "\033[34;1m"
 #define RESET "\033[0m"
+#define ENTER_ALTERNATE_BUFFER "\033[?1049h"
+#define EXIT_ALTERNATE_BUFFER "\033[?1049l"
+#define RESET_CURSOR "\033[H"
 
 const int ROWS = 3;
 const int COLUMNS = 3;
@@ -25,7 +28,7 @@ Player p2{.move = 'O'};
 
 int readInt();
 bool startGame(char gameMode);
-void namesPlayers();
+void playerNames();
 void printBoard();
 void playerMove(Player player);
 void placeMarker(Player & player, int position);
@@ -47,8 +50,9 @@ int main()
         p2.win = 0;
         matches = 0;
 
-        system("clear");
-        
+        cout << ENTER_ALTERNATE_BUFFER;
+        cout << RESET_CURSOR;
+
         cout << "---------TRIS---------\n";
         cout << "Choose an option:\n";
         cout << "1. Player vs Player\n";
@@ -59,7 +63,6 @@ int main()
 
         if (menuChoice == 3)
         {
-            cout << "Exiting program...\n";
             break;
         }
         
@@ -69,14 +72,14 @@ int main()
                 gameMode = 'p';
                 p2.name = "";
                 resetBoard();
-                namesPlayers();
+                playerNames();
                 break;
 
             case 2:
                 gameMode = 'c';
                 p2.name = COMPUTER_NAME;
                 resetBoard();
-                namesPlayers();
+                playerNames();
                 break;
 
             default:
@@ -89,6 +92,8 @@ int main()
         }
     }
 
+    cout << EXIT_ALTERNATE_BUFFER;
+    
     return 0;
 }
 
@@ -173,7 +178,7 @@ bool startGame(char gameMode)
     return playAgain();
 }
 
-void namesPlayers()
+void playerNames()
 {
     system("clear");
     
@@ -267,6 +272,8 @@ void placeMarker(Player & player, int position)
         playerMove(player);
     }
 }
+
+
 
 bool computerMove()
 {

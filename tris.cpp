@@ -1,13 +1,17 @@
 #include <iostream>
+#include <termios.h>
 
-using std::cout, std::cin, std::string, std::stoi;
+using std::cout, std::cin, std::string, std::endl, std::stoi;
 
 #define RED_BOLD "\033[31;1m"
 #define BLUE_BOLD "\033[34;1m"
-#define RESET "\033[0m"
+#define INVERTED_COLORS "\033[30;47m"
+#define RESET_COLORS "\033[0m"
 #define ENTER_ALTERNATE_BUFFER "\033[?1049h"
 #define EXIT_ALTERNATE_BUFFER "\033[?1049l"
-#define RESET_CURSOR "\033[H"
+#define RESET_CURSOR_POSITION "\033[H"
+#define HIDE_CURSOR "\e[?25l"
+#define SHOW_CURSOR "\e[?25h"
 
 const int ROWS = 3;
 const int COLUMNS = 3;
@@ -18,17 +22,19 @@ int matches;
 
 struct Player
 {
-    string name;
-    char move;
-    int win;
+	string name;
+	char move;
+	int win;
 };
 
 Player p1{.move = 'X'};
 Player p2{.move = 'O'};
 
-int readInt();
+void setRawMode(bool enable);
 bool startGame(char gameMode);
 void playerNames();
+void printMenu(int menuChoice);
+void printOption(int option);
 void printBoard();
 void playerMove(Player player);
 void placeMarker(Player & player, int position);
@@ -37,382 +43,504 @@ bool checkWin(Player & player);
 bool checkTie(int moveCount);
 void resetBoard();
 void showWins();
-bool playAgain();
+bool playAgain(string result);
+void clearInputBuffer();
 
 int main()
 {
-    int menuChoice;
-    char gameMode;
+	int menuChoice;
+	char gameMode;
 
-    while (true)
-    {   
-        p1.win = 0;
-        p2.win = 0;
-        matches = 0;
+	cout << ENTER_ALTERNATE_BUFFER;
+	cout << RESET_CURSOR_POSITION;
+		
+	while (true)
+	{   
+		menuChoice = 0;
+		p1.win = 0;
+		p2.win = 0;
+		matches = 0;
 
-        cout << ENTER_ALTERNATE_BUFFER;
-        cout << RESET_CURSOR;
+		cout << HIDE_CURSOR;
+		setRawMode(true);
 
-        cout << "---------TRIS---------\n";
-        cout << "Choose an option:\n";
-        cout << "1. Player vs Player\n";
-        cout << "2. Player vs Computer\n";
-        cout << "3. Exit\n";
-        cout << "--> ";
-        menuChoice = readInt();
+		while (true)
+		{
+			printMenu(menuChoice);
 
-        if (menuChoice == 3)
-        {
-            break;
-        }
-        
-        switch (menuChoice)
-        {
-            case 1:
-                gameMode = 'p';
-                p2.name = "";
-                resetBoard();
-                playerNames();
-                break;
+			int ch = getchar();
 
-            case 2:
-                gameMode = 'c';
-                p2.name = COMPUTER_NAME;
-                resetBoard();
-                playerNames();
-                break;
+			if (ch == '\e')
+			{
+				ch = getchar();
+				if (ch == '[')
+				{
+					ch = getchar();
 
-            default:
-                continue;
-        }
+					if (ch == 'A' && menuChoice > 0)
+						menuChoice--;
+					else if (ch == 'B' && menuChoice < 2) 
+						menuChoice++;
+				}
+			} 
+			else if (ch == '\n') 
+			{
+				break;
+			} 
+			else 
+			{
 
-        while (startGame(gameMode))
-        {
-            resetBoard();
-        }
-    }
+			}
+		}
 
-    cout << EXIT_ALTERNATE_BUFFER;
-    
-    return 0;
+		setRawMode(false);
+		cout << SHOW_CURSOR;
+
+		if (menuChoice == 2)
+			{
+				break;
+			}
+
+		switch (menuChoice)
+		{
+			case 0:
+				gameMode = 'p';
+				p2.name = "";
+				resetBoard();
+				playerNames();
+				break;
+			case 1:
+				gameMode = 'c';
+				p2.name = COMPUTER_NAME;
+				resetBoard();
+				playerNames();
+				break;
+		}
+
+		while (startGame(gameMode))
+		{
+			resetBoard();
+		}
+	}
+
+	cout << EXIT_ALTERNATE_BUFFER;
+		
+	return 0;
 }
 
-int readInt()
+void setRawMode(bool enable)
 {
-    string inputString;
-    int inputNumber;
-
-    cin >> inputString;
-
-    try
-    {
-        inputNumber = stoi(inputString);
-        return inputNumber;
-    }
-    catch (...)
-    {
-        return 0;
-    }
-
+	static struct termios oldt, newt;
+	if (enable)
+	{
+		tcgetattr(0, &oldt);
+		newt = oldt;
+		newt.c_lflag &= ~(ICANON | ECHO);
+		tcsetattr(0, TCSANOW, &newt);
+	}
+	else
+	{
+		tcsetattr(0, TCSANOW, &oldt);
+	}
 }
 
 bool startGame(char gameMode)
 {
-    int moveCount = 0;
+	int moveCount = 0;
+	string result;
 
-    do
-    {
-        printBoard();
-        showWins();
-        moveCount++;
+	do
+	{
+		printBoard();
+		showWins();
+		moveCount++;
 
-        if (matches % 2 == 0)
-        {
-            playerMove(p1);
-            if (checkWin(p1))
-                break;
-        }
-        else if (gameMode == 'p' && matches % 2 == 1)
-        {
-            playerMove(p2);
-            if (checkWin(p2))
-                break;
-        }
-        else
-        {
-            computerMove();
-            if (checkWin(p2))
-                break;
-        }
+		if (matches % 2 == 0)
+		{
+			playerMove(p1);
+			if (checkWin(p1))
+			{
+				result = p1.name + " won!!\n";
+				break;
+			}
+		}
+		else if (gameMode == 'p' && matches % 2 == 1)
+		{
+			playerMove(p2);
+			if (checkWin(p2))
+			{
+				result = p2.name + " won!!\n";
+				break;
+			}
+		}
+		else
+		{
+			computerMove();
+			if (checkWin(p2))
+			{
+				result = p2.name + " won!!\n";
+				break;
+			}
+		}
 
-        if (checkTie(moveCount))
-            break;
+		if (checkTie(moveCount))
+		{
+			result = "It's a tie.\n";
+			break;
+		}
 
-        printBoard();
-        showWins();
-        moveCount++;
+		printBoard();
+		showWins();
+		moveCount++;
 
-        if (matches % 2 == 1)
-        {
-            playerMove(p1);
-            if (checkWin(p1))
-                break;
-        }
-        else if (gameMode == 'p' && matches % 2 == 0)
-        {
-            playerMove(p2);
-            if (checkWin(p2))
-                break;
-        }
-        else
-        {
-            computerMove();
-            if (checkWin(p2))
-                break;
-        }
-    }
-    while (true);
+		if (matches % 2 == 1)
+		{
+			playerMove(p1);
+			if (checkWin(p1))
+			{
+				result = p1.name + " won!!\n";
+				break;
+			}
+		}
+		else if (gameMode == 'p' && matches % 2 == 0)
+		{
+			playerMove(p2);
+			if (checkWin(p2))
+			{
+				result = p2.name + " won!!\n";
+				break;
+			}
+		}
+		else
+		{
+			computerMove();
+			if (checkWin(p2))
+			{
+				result = p2.name + " won!!\n";
+				break;
+			}
+		}
+	}
+	while (true);
 
-    matches++;
+	matches++;
 
-    return playAgain();
+	return playAgain(result);
 }
 
 void playerNames()
 {
-    system("clear");
-    
-    if (p2.name == COMPUTER_NAME)
-    {
-        cout << "---------TRIS---------\n";
-        cout << "Insert your name:\n";
-        cout << "--> ";
-        cin >> p1.name;
-    }
+	system("clear");
+		
+	if (p2.name == COMPUTER_NAME)
+	{
+		cout << "------Tic-Tac-Toe------\n";
+		cout << "Insert your name:\n";
+		cout << "--> ";
+		cin >> p1.name;
+	}
 
-    else
-    {
-        cout << "---------TRIS---------\n";
-        cout << "Insert FIRST player's name:\n";
-        cout << "--> ";
-        cin >> p1.name;
+	else
+	{
+		cout << "------Tic-Tac-Toe------\n";
+		cout << "Insert FIRST player's name:\n";
+		cout << "--> ";
+		cin >> p1.name;
 
-        cout << "\nInsert SECOND player's name:\n";
-        cout << "--> ";
-        cin >> p2.name;
-    }
+		cout << "\nInsert SECOND player's name:\n";
+		cout << "--> ";
+		cin >> p2.name;
+	}
+
+	clearInputBuffer();
 }
 
 void printBoard()
 {
-    system("clear");
+	system("clear");
 
-    cout << "---------TRIS---------\n\n";
+	cout << "------Tic-Tac-Toe------\n\n";
 
-    for (int i = 0; i < ROWS; i++)
-    {
-        cout << "     ";
-        for (int j = 0; j < COLUMNS; j++)
-        {
-            if (board[i][j] == 'X')
-                cout << RED_BOLD << " " << board[i][j] << " " << RESET;
-            else if (board[i][j] == 'O')
-                cout << BLUE_BOLD << " " << board[i][j] << " " << RESET;
-            else
-                cout << " " << board[i][j] << " ";
+	for (int i = 0; i < ROWS; i++)
+	{
+		cout << "      ";
+		for (int j = 0; j < COLUMNS; j++)
+		{
+			if (board[i][j] == 'X')
+				cout << RED_BOLD << " " << board[i][j] << " " << RESET_COLORS;
+			else if (board[i][j] == 'O')
+				cout << BLUE_BOLD << " " << board[i][j] << " " << RESET_COLORS;
+			else
+				cout << " " << board[i][j] << " ";
 
-            if (j < COLUMNS - 1)
-                cout << "|";
-        }
+			if (j < COLUMNS - 1)
+				cout << "|";
+		}
 
-        cout << "\n";
+		cout << "\n";
 
-        if (i < ROWS - 1)
-        {
-            cout << "     " << "-----------\n";
-        }
-    }
+		if (i < ROWS - 1)
+		{
+			cout << "      " << "-----------\n";
+		}
+	}
 
-    cout << "\n";
+	cout << "\n";
+}
+
+void printMenu(int menuChoice)
+{
+	cout << endl;
+	system("clear");
+
+	struct colors
+	{
+		string invert;
+		string reset;
+	};
+
+	colors option1{.invert = "", .reset = ""};
+	colors option2{.invert = "", .reset = ""};
+	colors option3{.invert = "", .reset = ""};
+
+	switch (menuChoice)
+	{
+		case 0:
+			option1.invert = INVERTED_COLORS;
+			option1.reset = RESET_COLORS;
+			break;
+		case 1:
+			option2.invert = INVERTED_COLORS;
+			option2.reset = RESET_COLORS;
+			break;
+		case 2:
+			option3.invert = INVERTED_COLORS;
+			option3.reset = RESET_COLORS;
+			break;
+	}
+
+	cout << "------Tic-Tac-Toe------\n";
+	cout << "  " << option1.invert << "Player vs Player" << option1.reset << endl;
+	cout << "  " << option2.invert << "Player vs Computer" << option2.reset << endl;
+	cout << "  " << option3.invert << "Exit" << option3.reset << endl;
+	cout << "-----------------------";
+}
+
+void printOption(int option)
+{
+	if (option == 0)
+		cout << "Do you want to play again? (" << INVERTED_COLORS << "y" << RESET_COLORS << "/n)";
+	else
+		cout << "Do you want to play again? (y/" << INVERTED_COLORS << "n" << RESET_COLORS << ")";
 }
 
 void playerMove(Player player)
 {
-    int position;
+	int position;
 
-    cout << player.name << "'s turn\n";
-    cout << "Choose where to place your \"" << player.move << "\": ";
-    position = readInt();
+	cout << player.name << "'s turn\n";
+	cout << "Choose where to place your \"" << player.move << "\": ";
+	cout.flush();
+	
+	setRawMode(true);
+	position = getchar() - '0';
+	setRawMode(false);
 
-    placeMarker(player, position);
+	placeMarker(player, position);
 }
 
 void placeMarker(Player & player, int position)
 {
-    int rowIndex = (position - 1) / COLUMNS;
-    int colIndex = (position - 1) % COLUMNS;
+	int rowIndex = (position - 1) / COLUMNS;
+	int colIndex = (position - 1) % COLUMNS;
 
-    if (position >= 1 && position <= TOTAL_CELLS && board[rowIndex][colIndex] != 'X' && board[rowIndex][colIndex] != 'O')
-    {
-        board[rowIndex][colIndex] = player.move;
-    }
+	if (position >= 1 && position <= TOTAL_CELLS && board[rowIndex][colIndex] != 'X' && board[rowIndex][colIndex] != 'O')
+	{
+		board[rowIndex][colIndex] = player.move;
+	}
 
-    else
-    {
-        printBoard();
-        
-        if (position == 0)
-            cout << "Invalid input.\nChoose a position between 1 and 9.\n";
-        else if (position < 1 || position > 9)
-            cout << "Not a valid position.\nChoose a position between 1 and 9.\n";
-        else
-            cout << "Position alredy occupied.\nChoose another position.\n";
+	else
+	{
+		printBoard();
+		
+		if (position == 0)
+			cout << "Invalid input.\nChoose a position between 1 and 9.\n";
+		else if (position < 1 || position > 9)
+			cout << "Not a valid position.\nChoose a position between 1 and 9.\n";
+		else
+			cout << "Position alredy occupied.\nChoose another position.\n";
 
-        cout << "----------------------\n";
-        playerMove(player);
-    }
+		cout << "----------------------\n";
+
+		playerMove(player);
+	}
 }
-
-
 
 bool computerMove()
 {
-    for (int i = 0; i < ROWS; i++) 
-    {
-        for (int j = 0; j < COLUMNS; j++) 
-        {
-            if (board[i][j] != 'X' && board[i][j] != 'O') 
-            {
-                char originalValue = board[i][j];
-                board[i][j] = p2.move;
+	for (int i = 0; i < ROWS; i++) 
+	{
+		for (int j = 0; j < COLUMNS; j++) 
+		{
+			if (board[i][j] != 'X' && board[i][j] != 'O') 
+			{
+				char originalValue = board[i][j];
+				board[i][j] = p2.move;
 
-                if (checkWin(p2))
-                {
-                    p2.win--;
-                    return true;
-                }
+				if (checkWin(p2))
+				{
+					p2.win--;
+					return true;
+				}
 
-                board[i][j] = originalValue;
-            }
-        }
-    }
+				board[i][j] = originalValue;
+			}
+		}
+	}
 
-    for (int i = 0; i < ROWS; i++) 
-    {
-        for (int j = 0; j < COLUMNS; j++) 
-        {
-            if (board[i][j] != 'X' && board[i][j] != 'O') 
-            {
-                char originalValue = board[i][j];
-                board[i][j] = p1.move;
+	for (int i = 0; i < ROWS; i++) 
+	{
+		for (int j = 0; j < COLUMNS; j++) 
+		{
+			if (board[i][j] != 'X' && board[i][j] != 'O') 
+			{
+				char originalValue = board[i][j];
+				board[i][j] = p1.move;
 
-                if (checkWin(p2)) 
-                {
-                    p2.win--;
-                    board[i][j] = p2.move;
-                    return true;
-                }
+				if (checkWin(p2)) 
+				{
+					p2.win--;
+					board[i][j] = p2.move;
+					return true;
+				}
 
-                board[i][j] = originalValue;
-            }
-        }
-    }
+				board[i][j] = originalValue;
+			}
+		}
+	}
 
-    int position;
+	int position;
 
-    do 
-    {
-        position = rand() % TOTAL_CELLS + 1;
-    } 
-    while (board[(position - 1) / COLUMNS][(position - 1) % COLUMNS] == 'X' || board[(position - 1) / COLUMNS][(position - 1) % COLUMNS] == 'O');
+	do 
+	{
+		position = rand() % TOTAL_CELLS + 1;
+	} 
+	while (board[(position - 1) / COLUMNS][(position - 1) % COLUMNS] == 'X' || board[(position - 1) / COLUMNS][(position - 1) % COLUMNS] == 'O');
 
-    placeMarker(p2, position);
+	placeMarker(p2, position);
 
-    return false;
+	return false;
 }
 
 bool checkWin(Player & player)
 {
-    for (int i = 0; i < ROWS; i++)
-    {
-        if ((board[i][0] == board[i][1] && board[i][0] == board[i][2]) ||
-            (board[0][i] == board[1][i] && board[0][i] == board[2][i]))
-        {
-            printBoard();
-            player.win++;
-            showWins();
-            cout << player.name << " won!!\n";
-            return true;
-        }
-    }
+	for (int i = 0; i < ROWS; i++)
+	{
+		if ((board[i][0] == board[i][1] && board[i][0] == board[i][2]) ||
+			(board[0][i] == board[1][i] && board[0][i] == board[2][i]))
+		{
+			printBoard();
+			player.win++;
+			showWins();
+			return true;
+		}
+	}
 
-    if ((board[0][0] == board[1][1] && board[0][0] == board[2][2]) ||
-        (board[0][2] == board[1][1] && board[0][2] == board[2][0]))
-    {
-        printBoard();
-        player.win++;
-        showWins();
-        cout << player.name << " won!!\n";
-        return true;
-    }
+	if ((board[0][0] == board[1][1] && board[0][0] == board[2][2]) ||
+		(board[0][2] == board[1][1] && board[0][2] == board[2][0]))
+	{
+		printBoard();
+		player.win++;
+		showWins();
+		return true;
+	}
 
-    return false;
+	return false;
 }
 
 bool checkTie(int moveCount)
 {
-    if (moveCount == TOTAL_CELLS)
-    {
-        printBoard();
-        showWins();
-        cout << "It's a tie.\n";
-        return true;
-    }
+	if (moveCount == TOTAL_CELLS)
+	{
+		printBoard();
+		showWins();
+		return true;
+	}
 
-    return false;
+	return false;
 }
 
 void resetBoard()
 {
-    for (int i = 0; i < ROWS; i++)
-    {
-        for (int j = 0; j < COLUMNS; j++)
-        {
-            board[i][j] = '1' + i * COLUMNS + j;
-        }
-    }
+	for (int i = 0; i < ROWS; i++)
+	{
+		for (int j = 0; j < COLUMNS; j++)
+		{
+			board[i][j] = '1' + i * COLUMNS + j;
+		}
+	}
 }
 
 void showWins()
 {
-    cout << p1.name << "'s wins: " << p1.win << "\n";
-    cout << p2.name << "'s wins: " << p2.win << "\n";
-    cout << "----------------------\n";
+	cout << p1.name << "'s wins: " << p1.win << "\n";
+	cout << p2.name << "'s wins: " << p2.win << "\n";
+	cout << "----------------------\n";
 }
 
-bool playAgain()
+bool playAgain(string result)
 {
-    char option;
-    
-    do
-    {
-        cout << "Do you want to play again? (y/n): ";
-        cin >> option;
-    
-        if (option == 'y' || option == 'Y')
-        {
-            return true;
-        }
-        else if (option == 'n' || option == 'N')
-        {
-            return false;
-        }
-        else
-        {
-            printBoard();
-            showWins();
-            cout << "Not a valid option.\n";
-        }
-    }
-    while (true);
+	int option = 0;
+
+	cout << HIDE_CURSOR;
+	setRawMode(true);
+
+	while (true)
+	{
+		printBoard();
+		showWins();
+		cout << result;
+		printOption(option);
+
+		int ch = getchar();
+
+		if (ch == '\e')
+		{
+			ch = getchar();
+			if (ch == '[')
+			{
+				ch = getchar();
+
+				if (ch == 'D' && option == 1)
+					option--;
+				else if (ch == 'C' && option == 0) 
+					option++;
+			}
+		} 
+		else if (ch == '\n') 
+		{
+			break;
+		} 
+		else 
+		{
+
+		}
+	}
+
+	setRawMode(false);
+	cout << SHOW_CURSOR;
+
+	if (option == 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void clearInputBuffer() {
+	int c;
+	while ((c = getchar()) != '\n' && c != EOF) { }
 }

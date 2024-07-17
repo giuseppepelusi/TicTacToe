@@ -329,9 +329,9 @@ void printMenu(int menuChoice)
 void printOption(int option)
 {
 	if (option == 0)
-		cout << "Do you want to play again? (" << INVERTED_COLORS << "y" << RESET_COLORS << "/n)";
+		cout << "Do you want to play again? [" << INVERTED_COLORS << "y" << RESET_COLORS << "/n]";
 	else
-		cout << "Do you want to play again? (y/" << INVERTED_COLORS << "n" << RESET_COLORS << ")";
+		cout << "Do you want to play again? [y/" << INVERTED_COLORS << "n" << RESET_COLORS << "]";
 }
 
 void playerMove(Player player)

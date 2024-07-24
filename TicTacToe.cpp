@@ -1,7 +1,7 @@
 #include <iostream>
 #include <termios.h>
 
-using std::cout, std::cin, std::string, std::endl, std::stoi;
+using std::cout, std::cin, std::string, std::endl;
 
 #define RED_BOLD "\033[31;1m"
 #define BLUE_BOLD "\033[34;1m"
@@ -34,12 +34,11 @@ void setRawMode(bool enable);
 bool startGame(char gameMode);
 void playerNames();
 void printMenu(int menuChoice);
-void printOption(int option);
 void printBoard();
 void playerMove(Player player);
 void placeMarker(Player & player, int position);
 bool computerMove();
-bool checkWin(Player & player);
+bool checkWin();
 bool checkTie(int moveCount);
 void resetBoard();
 void showWins();
@@ -53,9 +52,9 @@ int main()
 
 	cout << ENTER_ALTERNATE_BUFFER;
 	cout << RESET_CURSOR_POSITION;
-		
+
 	while (true)
-	{   
+	{
 		menuChoice = 0;
 		p1.win = 0;
 		p2.win = 0;
@@ -79,18 +78,15 @@ int main()
 
 					if (ch == 'A' && menuChoice > 0)
 						menuChoice--;
-					else if (ch == 'B' && menuChoice < 2) 
+					else if (ch == 'B' && menuChoice < 2)
 						menuChoice++;
 				}
-			} 
-			else if (ch == '\n') 
+			}
+			else if (ch == '\n')
 			{
 				break;
-			} 
-			else 
-			{
-
 			}
+			else;
 		}
 
 		setRawMode(false);
@@ -124,7 +120,7 @@ int main()
 	}
 
 	cout << EXIT_ALTERNATE_BUFFER;
-		
+
 	return 0;
 }
 
@@ -158,8 +154,9 @@ bool startGame(char gameMode)
 		if (matches % 2 == 0)
 		{
 			playerMove(p1);
-			if (checkWin(p1))
+			if (checkWin())
 			{
+				p1.win++;
 				result = p1.name + " won!!\n";
 				break;
 			}
@@ -167,8 +164,9 @@ bool startGame(char gameMode)
 		else if (gameMode == 'p' && matches % 2 == 1)
 		{
 			playerMove(p2);
-			if (checkWin(p2))
+			if (checkWin())
 			{
+				p2.win++;
 				result = p2.name + " won!!\n";
 				break;
 			}
@@ -176,8 +174,9 @@ bool startGame(char gameMode)
 		else
 		{
 			computerMove();
-			if (checkWin(p2))
+			if (checkWin())
 			{
+				p2.win++;
 				result = p2.name + " won!!\n";
 				break;
 			}
@@ -196,8 +195,9 @@ bool startGame(char gameMode)
 		if (matches % 2 == 1)
 		{
 			playerMove(p1);
-			if (checkWin(p1))
+			if (checkWin())
 			{
+				p1.win++;
 				result = p1.name + " won!!\n";
 				break;
 			}
@@ -205,8 +205,9 @@ bool startGame(char gameMode)
 		else if (gameMode == 'p' && matches % 2 == 0)
 		{
 			playerMove(p2);
-			if (checkWin(p2))
+			if (checkWin())
 			{
+				p2.win++;
 				result = p2.name + " won!!\n";
 				break;
 			}
@@ -214,8 +215,9 @@ bool startGame(char gameMode)
 		else
 		{
 			computerMove();
-			if (checkWin(p2))
+			if (checkWin())
 			{
+				p2.win++;
 				result = p2.name + " won!!\n";
 				break;
 			}
@@ -231,7 +233,7 @@ bool startGame(char gameMode)
 void playerNames()
 {
 	system("clear");
-		
+
 	if (p2.name == COMPUTER_NAME)
 	{
 		cout << "------Tic-Tac-Toe------\n";
@@ -326,14 +328,6 @@ void printMenu(int menuChoice)
 	cout << "-----------------------";
 }
 
-void printOption(int option)
-{
-	if (option == 0)
-		cout << "Do you want to play again? [" << INVERTED_COLORS << "y" << RESET_COLORS << "/n]";
-	else
-		cout << "Do you want to play again? [y/" << INVERTED_COLORS << "n" << RESET_COLORS << "]";
-}
-
 void playerMove(Player player)
 {
 	int position;
@@ -341,7 +335,7 @@ void playerMove(Player player)
 	cout << player.name << "'s turn\n";
 	cout << "Choose where to place your \"" << player.move << "\": ";
 	cout.flush();
-	
+
 	setRawMode(true);
 	position = getchar() - '0';
 	setRawMode(false);
@@ -362,11 +356,9 @@ void placeMarker(Player & player, int position)
 	else
 	{
 		printBoard();
-		
-		if (position == 0)
+
+		if (position < 1 || position > 9)
 			cout << "Invalid input.\nChoose a position between 1 and 9.\n";
-		else if (position < 1 || position > 9)
-			cout << "Not a valid position.\nChoose a position between 1 and 9.\n";
 		else
 			cout << "Position alredy occupied.\nChoose another position.\n";
 
@@ -378,18 +370,17 @@ void placeMarker(Player & player, int position)
 
 bool computerMove()
 {
-	for (int i = 0; i < ROWS; i++) 
+	for (int i = 0; i < ROWS; i++)
 	{
-		for (int j = 0; j < COLUMNS; j++) 
+		for (int j = 0; j < COLUMNS; j++)
 		{
-			if (board[i][j] != 'X' && board[i][j] != 'O') 
+			if (board[i][j] != 'X' && board[i][j] != 'O')
 			{
 				char originalValue = board[i][j];
 				board[i][j] = p2.move;
 
-				if (checkWin(p2))
+				if (checkWin())
 				{
-					p2.win--;
 					return true;
 				}
 
@@ -398,18 +389,17 @@ bool computerMove()
 		}
 	}
 
-	for (int i = 0; i < ROWS; i++) 
+	for (int i = 0; i < ROWS; i++)
 	{
-		for (int j = 0; j < COLUMNS; j++) 
+		for (int j = 0; j < COLUMNS; j++)
 		{
-			if (board[i][j] != 'X' && board[i][j] != 'O') 
+			if (board[i][j] != 'X' && board[i][j] != 'O')
 			{
 				char originalValue = board[i][j];
 				board[i][j] = p1.move;
 
-				if (checkWin(p2)) 
+				if (checkWin())
 				{
-					p2.win--;
 					board[i][j] = p2.move;
 					return true;
 				}
@@ -421,10 +411,10 @@ bool computerMove()
 
 	int position;
 
-	do 
+	do
 	{
 		position = rand() % TOTAL_CELLS + 1;
-	} 
+	}
 	while (board[(position - 1) / COLUMNS][(position - 1) % COLUMNS] == 'X' || board[(position - 1) / COLUMNS][(position - 1) % COLUMNS] == 'O');
 
 	placeMarker(p2, position);
@@ -432,16 +422,13 @@ bool computerMove()
 	return false;
 }
 
-bool checkWin(Player & player)
+bool checkWin()
 {
 	for (int i = 0; i < ROWS; i++)
 	{
 		if ((board[i][0] == board[i][1] && board[i][0] == board[i][2]) ||
 			(board[0][i] == board[1][i] && board[0][i] == board[2][i]))
 		{
-			printBoard();
-			player.win++;
-			showWins();
 			return true;
 		}
 	}
@@ -449,9 +436,6 @@ bool checkWin(Player & player)
 	if ((board[0][0] == board[1][1] && board[0][0] == board[2][2]) ||
 		(board[0][2] == board[1][1] && board[0][2] == board[2][0]))
 	{
-		printBoard();
-		player.win++;
-		showWins();
 		return true;
 	}
 
@@ -462,8 +446,6 @@ bool checkTie(int moveCount)
 {
 	if (moveCount == TOTAL_CELLS)
 	{
-		printBoard();
-		showWins();
 		return true;
 	}
 
@@ -500,7 +482,10 @@ bool playAgain(string result)
 		printBoard();
 		showWins();
 		cout << result;
-		printOption(option);
+		if (option == 0)
+			cout << "Do you want to play again? [" << INVERTED_COLORS << "Y" << RESET_COLORS << "/n]";
+		else
+			cout << "Do you want to play again? [Y/" << INVERTED_COLORS << "n" << RESET_COLORS << "]";
 
 		int ch = getchar();
 
@@ -513,34 +498,32 @@ bool playAgain(string result)
 
 				if (ch == 'D' && option == 1)
 					option--;
-				else if (ch == 'C' && option == 0) 
+				else if (ch == 'C' && option == 0)
 					option++;
 			}
-		} 
-		else if (ch == '\n') 
+		}
+		else if ((ch == 'y' || ch == 'Y') && option == 1)
+			option--;
+		else if ((ch == 'n' || ch == 'N') && option == 0)
+			option++;
+		else if (ch == '\n')
 		{
 			break;
-		} 
-		else 
-		{
-
 		}
+		else;
 	}
 
 	setRawMode(false);
 	cout << SHOW_CURSOR;
 
 	if (option == 0)
-	{
 		return true;
-	}
 	else
-	{
 		return false;
-	}
 }
 
-void clearInputBuffer() {
+void clearInputBuffer()
+{
 	int c;
 	while ((c = getchar()) != '\n' && c != EOF) { }
 }

@@ -20,7 +20,8 @@ clear:
 	echo "$(YELLOW)•$(RESET) Removed executable"
 
 install: all
-	sudo mv $(EXEC) $(INSTALL_PATH)
+	sudo cp $(EXEC) $(INSTALL_PATH)
+	rm -f $(EXEC)
 	echo "$(GREEN)•$(RESET) Installed \033[1;32m$(EXEC)$(RESET) to $(BLUE)$(INSTALL_PATH)$(RESET)"
 
 uninstall:

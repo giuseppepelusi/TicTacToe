@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstdlib>
 #include <termios.h>
 
 using std::cout, std::cin, std::string, std::endl;
@@ -39,7 +40,7 @@ void playerMove(Player player);
 void placeMarker(Player & player, int position);
 bool computerMove();
 bool checkWin();
-bool checkTie(int moveCount);
+bool checkTie();
 void resetBoard();
 void showWins();
 bool playAgain(string result);
@@ -142,14 +143,12 @@ void setRawMode(bool enable)
 
 bool startGame(char gameMode)
 {
-	int moveCount = 0;
 	string result;
 
 	do
 	{
 		printBoard();
 		showWins();
-		moveCount++;
 
 		if (matches % 2 == 0)
 		{
@@ -182,7 +181,7 @@ bool startGame(char gameMode)
 			}
 		}
 
-		if (checkTie(moveCount))
+		if (checkTie())
 		{
 			result = "It's a tie.\n";
 			break;
@@ -190,7 +189,6 @@ bool startGame(char gameMode)
 
 		printBoard();
 		showWins();
-		moveCount++;
 
 		if (matches % 2 == 1)
 		{
@@ -442,14 +440,20 @@ bool checkWin()
 	return false;
 }
 
-bool checkTie(int moveCount)
+bool checkTie()
 {
-	if (moveCount == TOTAL_CELLS)
+	for (int i = 0; i < ROWS; i++)
 	{
-		return true;
-	}
+        for (int j = 0; j < COLUMNS; j++)
+		{
+            if (board[i][j] != 'X' && board[i][j] != 'O')
+			{
+                return false;
+            }
+        }
+    }
 
-	return false;
+    return true;
 }
 
 void resetBoard()

@@ -148,78 +148,39 @@ bool startGame(char gameMode)
 	do
 	{
 		printBoard();
-		showWins();
+        showWins();
 
-		if (matches % 2 == 0)
-		{
-			playerMove(p1);
-			if (checkWin())
-			{
-				p1.win++;
-				result = p1.name + " won!!\n";
-				break;
-			}
-		}
-		else if (gameMode == 'p' && matches % 2 == 1)
-		{
-			playerMove(p2);
-			if (checkWin())
-			{
-				p2.win++;
-				result = p2.name + " won!!\n";
-				break;
-			}
-		}
-		else
-		{
-			computerMove();
-			if (checkWin())
-			{
-				p2.win++;
-				result = p2.name + " won!!\n";
-				break;
-			}
-		}
+        Player* currentPlayer;
 
-		if (checkTie())
-		{
-			result = "It's a tie.\n";
-			break;
-		}
+        if (matches % 2 == 0)
+        {
+            currentPlayer = &p1;
+        } else
+        {
+            currentPlayer = &p2;
+        }
 
-		printBoard();
-		showWins();
+        if (currentPlayer->name == COMPUTER_NAME && gameMode == 'c')
+        {
+            computerMove();
+        }
+        else
+        {
+            playerMove(*currentPlayer);
+        }
 
-		if (matches % 2 == 1)
-		{
-			playerMove(p1);
-			if (checkWin())
-			{
-				p1.win++;
-				result = p1.name + " won!!\n";
-				break;
-			}
-		}
-		else if (gameMode == 'p' && matches % 2 == 0)
-		{
-			playerMove(p2);
-			if (checkWin())
-			{
-				p2.win++;
-				result = p2.name + " won!!\n";
-				break;
-			}
-		}
-		else
-		{
-			computerMove();
-			if (checkWin())
-			{
-				p2.win++;
-				result = p2.name + " won!!\n";
-				break;
-			}
-		}
+        if (checkWin()) {
+            currentPlayer->win++;
+            result = currentPlayer->name + " won!!\n";
+            break;
+        }
+
+        if (checkTie()) {
+            result = "It's a tie.\n";
+            break;
+        }
+
+        matches++;
 	}
 	while (true);
 

@@ -17,6 +17,8 @@ using std::cout, std::cin, std::string, std::endl;
 const int ROWS = 3;
 const int COLUMNS = 3;
 const int TOTAL_CELLS = ROWS * COLUMNS;
+const int MIN_SCORE = -2147483648;
+const int MAX_SCORE = 2147483647;
 char board[ROWS][COLUMNS];
 const string COMPUTER_NAME = "Computer";
 int matches;
@@ -38,7 +40,8 @@ void printMenu(int menuChoice);
 void printBoard();
 void playerMove(Player player);
 void placeMarker(Player & player, int position);
-bool computerMove();
+void computerMove();
+int minimax(int depth, bool isMaximizing);
 bool checkWin();
 bool checkTie();
 void resetBoard();
@@ -327,8 +330,11 @@ void placeMarker(Player & player, int position)
 	}
 }
 
-bool computerMove()
+void computerMove()
 {
+	int bestScore = MIN_SCORE;
+	int bestMove = -1;
+
 	for (int i = 0; i < ROWS; i++)
 	{
 		for (int j = 0; j < COLUMNS; j++)
@@ -337,48 +343,76 @@ bool computerMove()
 			{
 				char originalValue = board[i][j];
 				board[i][j] = p2.move;
-
-				if (checkWin())
-				{
-					return true;
-				}
-
+				int score = minimax(0, false);
 				board[i][j] = originalValue;
+				if (score > bestScore)
+				{
+					bestScore = score;
+					bestMove = (i * COLUMNS + j) + 1;
+				}
 			}
 		}
 	}
 
-	for (int i = 0; i < ROWS; i++)
+	placeMarker(p2, bestMove);
+}
+
+int minimax(int depth, bool isMaximizing)
+{
+	if (checkWin())
 	{
-		for (int j = 0; j < COLUMNS; j++)
+		if (isMaximizing)
+			return -1;
+		else
+			return 1;
+	}
+	if (checkTie())
+	{
+		return 0;
+	}
+
+	int bestScore;
+
+	if (isMaximizing)
+	{
+		bestScore = MIN_SCORE;
+		for (int i = 0; i < ROWS; i++)
 		{
-			if (board[i][j] != 'X' && board[i][j] != 'O')
+			for (int j = 0; j < COLUMNS; j++)
 			{
-				char originalValue = board[i][j];
-				board[i][j] = p1.move;
-
-				if (checkWin())
+				if (board[i][j] != 'X' && board[i][j] != 'O')
 				{
+					char originalValue = board[i][j];
 					board[i][j] = p2.move;
-					return true;
+					int score = minimax(depth + 1, false);
+					board[i][j] = originalValue;
+					if (score > bestScore)
+						bestScore = score;
 				}
-
-				board[i][j] = originalValue;
+			}
+		}
+	}
+	else
+	{
+		bestScore = MAX_SCORE;
+		for (int i = 0; i < ROWS; i++)
+		{
+			for (int j = 0; j < COLUMNS; j++)
+			{
+				if (board[i][j] != 'X' && board[i][j] != 'O')
+				{
+					char originalValue = board[i][j];
+					board[i][j] = p1.move;
+					int score = minimax(depth + 1, true);
+					board[i][j] = originalValue;
+					if (score < bestScore)
+						bestScore = score;
+				}
 			}
 		}
 	}
 
-	int position;
-
-	do
-	{
-		position = rand() % TOTAL_CELLS + 1;
-	}
-	while (board[(position - 1) / COLUMNS][(position - 1) % COLUMNS] == 'X' || board[(position - 1) / COLUMNS][(position - 1) % COLUMNS] == 'O');
-
-	placeMarker(p2, position);
-
-	return false;
+	return bestScore;
 }
 
 bool checkWin()
@@ -432,7 +466,7 @@ void showWins()
 {
 	cout << p1.name << "'s wins: " << p1.win << "\n";
 	cout << p2.name << "'s wins: " << p2.win << "\n";
-	cout << "----------------------\n";
+	cout << "-----------------------\n";
 }
 
 bool playAgain(string result)
